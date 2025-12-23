@@ -2,6 +2,8 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from src.infrastructure.api.routes import api_router
 from src.infrastructure.middleware.error_handler import setup_exception_handlers
@@ -24,18 +26,21 @@ app.add_middleware(
 # Setup exception handlers
 setup_exception_handlers(app)
 
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Include API routers
 app.include_router(api_router)
 
 
 @app.get("/")
-async def root() -> dict[str, str]:
-    """Root endpoint for health check.
+async def root():
+    """Root endpoint - serves the frontend HTML.
     
     Returns:
-        Simple health check response
+        Frontend HTML file
     """
-    return {"message": "Weather Dashboard API", "status": "running"}
+    return FileResponse("static/index.html")
 
 
 @app.get("/health")

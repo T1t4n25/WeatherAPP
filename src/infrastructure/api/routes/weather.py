@@ -7,6 +7,8 @@ from src.application.dto.weather_dto import WeatherResponse
 from src.application.services.weather_service import WeatherService
 from src.domain.exceptions import InvalidCoordinatesError, WeatherAPIError
 from src.infrastructure.api.dependencies import get_weather_service_sync
+from src.infrastructure.external.openweather_client import OpenWeatherMapClient
+from src.infrastructure.config.settings import get_settings
 
 router = APIRouter()
 
@@ -63,10 +65,6 @@ async def get_weather_by_city(
         HTTPException: 404 for city not found, 503 for API errors
     """
     try:
-        # Get coordinates from city name
-        from src.infrastructure.external.openweather_client import OpenWeatherMapClient
-        from src.infrastructure.config.settings import get_settings
-
         settings = get_settings()
         client = OpenWeatherMapClient(settings)
         lat, lon = await client.get_coordinates_by_city(request.city)

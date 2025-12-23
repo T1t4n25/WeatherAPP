@@ -1,0 +1,110 @@
+/* Adaptive Dynamic Palette - Weather-based color system for glanceability */
+
+:root {
+  /* Clear/Sunny - Warm/Golden */
+  --sunny-from: #FFBA52;
+  --sunny-to: #FF7A00;
+  
+  /* Rainy/Overcast - Cool/Grey */
+  --rainy-from: #748DA6;
+  --rainy-to: #9CB4CC;
+  
+  /* Cold/Snow - Icy/Mint */
+  --cold-from: #A0E7E5;
+  --cold-to: #B4F8C8;
+  
+  /* Night - Dark */
+  --night-from: #2C3E50;
+  --night-to: #000000;
+}
+
+/* Weather-based background gradients */
+.weather-sunny {
+  background: linear-gradient(to bottom right, var(--sunny-from), var(--sunny-to));
+  color: #1f2937; /* Dark text on light background */
+}
+
+.weather-rainy {
+  background: linear-gradient(to bottom right, var(--rainy-from), var(--rainy-to));
+  color: #1f2937; /* Dark text on light background */
+}
+
+.weather-cold {
+  background: linear-gradient(to bottom right, var(--cold-from), var(--cold-to));
+  color: #1f2937; /* Dark text on light background */
+}
+
+.weather-night {
+  background: linear-gradient(to bottom right, var(--night-from), var(--night-to));
+  color: #ffffff; /* White text on dark background */
+}
+
+/* Smooth transitions between weather states */
+.transition-colors {
+  transition: background-color 0.7s ease, color 0.7s ease;
+}
+
+/* Weather card styling */
+.weather-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.weather-night .weather-card {
+  background: rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+}
+
+/* Text color adaptation for weather cards */
+.weather-sunny .weather-card,
+.weather-rainy .weather-card,
+.weather-cold .weather-card {
+  color: #1f2937;
+}
+
+.weather-night .weather-card {
+  color: #ffffff;
+}
+
+/* Loading spinner */
+.spinner {
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid currentColor;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border-width: 2px;
+  }
+}
+
+/* Touch-friendly interactions */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent text size adjustment on iOS */
+input, textarea, select {
+  font-size: 16px; /* Prevents zoom on iOS */
+}
+
+@media (min-width: 640px) {
+  input, textarea, select {
+    font-size: inherit;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+

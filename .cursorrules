@@ -2,8 +2,44 @@
 
 ## Stack
 - **Backend**: Python 3.11+, FastAPI, Pydantic, httpx
-- **Frontend**: Alpine.js (15KB), Tailwind CSS (CDN)
+- **Frontend**: Alpine.js (15KB), Tailwind CSS + Custom CSS (adaptive colors)
+- **Icons**: Lucide Icons (weather icons via CDN)
 - **Deployment**: Serverless-ready (Lambda, Vercel, Railway)
+- **Design**: Adaptive Dynamic Palette (glanceability-first)
+
+## Design Philosophy
+
+**Adaptive colors = instant weather understanding**
+
+| Condition | Colors | User Perception |
+|-----------|---------|-----------------|
+| Clear/Sunny | `#FFBA52 → #FF7A00` | Warm/Golden |
+| Rainy/Overcast | `#748DA6 → #9CB4CC` | Cool/Grey |
+| Cold/Snow | `#A0E7E5 → #B4F8C8` | Icy/Mint |
+| Night | `#2C3E50 → #000000` | Dark |
+
+**Logic**: Night → Cold (< 10°C) → Rainy → Sunny (default)
+
+**OpenWeatherMap Keywords Coverage**:
+- **Cold/Snow**: snow, sleet, ice, freezing, frost, blizzard
+- **Rainy/Overcast**: rain, drizzle, shower, downpour, cloud, cloudy, overcast, grey, mist, fog, haze, smoke, dust, thunderstorm, storm, squall
+- **Sunny**: clear, sunny, fair (default)
+
+**Weather Icon Mapping (Lucide Icons)**:
+| Condition | Icon | Description |
+|-----------|------|-------------|
+| Clear Day | `sun` | Bright sunshine |
+| Clear Night | `moon` | Clear night sky |
+| Cloudy Night | `cloud-moon` | Clouds at night |
+| Starry Night | `moon-star` | Starry night |
+| Thunderstorm | `cloud-lightning` | Storm with lightning |
+| Snow | `snowflake` | Snowing |
+| Sleet/Ice | `cloud-snow` | Mixed precipitation |
+| Heavy Rain | `cloud-rain-wind` | Heavy rainfall |
+| Light Rain | `cloud-rain` | Light rainfall |
+| Fog/Mist | `cloud-fog` | Low visibility |
+| Dust/Smoke | `wind` | Windy/dusty |
+| Cloudy | `cloud` or `cloudy` | Cloud cover |
 
 ## Architecture
 
@@ -76,11 +112,42 @@ function weatherApp() {
       await this.detectLocation();
     },
     
+    getWeatherClass() {
+      if (!this.weather) return 'weather-sunny';
+      
+      const temp = this.weather.temperature;
+      const desc = this.weather.description.toLowerCase();
+      const hour = new Date().getHours();
+      
+      // Night (6pm - 6am)
+      if (hour < 6 || hour >= 18) return 'weather-night';
+      
+      // Cold/Snow (below 10°C or snow conditions)
+      const coldKeywords = ['snow', 'sleet', 'ice', 'freezing', 'frost', 'blizzard'];
+      if (temp < 10 || coldKeywords.some(k => desc.includes(k))) {
+        return 'weather-cold';
+      }
+      
+      // Rainy/Overcast
+      const rainyKeywords = [
+        'rain', 'drizzle', 'shower', 'downpour', 'precipitation',
+        'cloud', 'cloudy', 'overcast', 'grey', 'gray',
+        'mist', 'fog', 'haze', 'smoke', 'dust',
+        'thunderstorm', 'storm', 'squall'
+      ];
+      if (rainyKeywords.some(k => desc.includes(k))) {
+        return 'weather-rainy';
+      }
+      
+      // Default: Sunny/Clear
+      return 'weather-sunny';
+    },
+    
     async fetchWeather(lat, lon) {
       this.loading = true;
       try {
         const res = await fetch(`/api/v1/weather?lat=${lat}&lon=${lon}`);
-        this.weather = await res.json();
+        this.weather = (await res.json()).data;
       } catch (e) {
         this.error = 'Failed to fetch weather';
       }
@@ -94,20 +161,55 @@ function weatherApp() {
 - Reactive state via x-data
 - Use async/await
 - Max 100 lines per component
-- No vanilla DOM manipulation
+- Dynamic class binding with :class
+- Weather keywords mapping:
+  - **Cold**: snow, sleet, ice, freezing, frost, blizzard
+  - **Rainy**: rain, drizzle, shower, cloud, overcast, mist, fog, haze, smoke, dust, thunderstorm, storm, squall
+  - **Sunny**: clear, sunny, fair (default fallback)
 
-### Tailwind CSS
+### CSS (Adaptive Dynamic Palette)
+```css
+/* Weather-based color system for glanceability */
+:root {
+  /* Clear/Sunny */
+  --sunny-from: #FFBA52;
+  --sunny-to: #FF7A00;
+  
+  /* Rainy/Overcast */
+  --rainy-from: #748DA6;
+  --rainy-to: #9CB4CC;
+  
+  /* Cold/Snow */
+  --cold-from: #A0E7E5;
+  --cold-to: #B4F8C8;
+  
+  /* Night */
+  --night-from: #2C3E50;
+  --night-to: #000000;
+}
+
+.weather-sunny { background: linear-gradient(to br, var(--sunny-from), var(--sunny-to)); }
+.weather-rainy { background: linear-gradient(to br, var(--rainy-from), var(--rainy-to)); }
+.weather-cold { background: linear-gradient(to br, var(--cold-from), var(--cold-to)); }
+.weather-night { background: linear-gradient(to br, var(--night-from), var(--night-to)); }
+```
+
 ```html
-<div class="min-h-screen bg-gradient-to-br from-blue-400 to-blue-600">
+<div :class="getWeatherClass()" class="min-h-screen transition-colors duration-700">
   <div class="max-w-md mx-auto p-6">
-    <div class="bg-white rounded-2xl shadow-xl p-8">
+    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8">
       <!-- Content -->
     </div>
   </div>
 </div>
 ```
 
-**Rules**: Use utility classes, mobile-first, dark mode with `dark:`
+**Rules**: 
+- Dynamic background based on weather conditions & temperature
+- Use CSS variables for weather colors
+- Smooth transitions (700ms) between states
+- Semi-transparent cards with backdrop blur
+- Text color adapts to background (white on dark, dark on light)
 
 ## Error Handling
 
@@ -283,14 +385,46 @@ async def get_weather(service: WeatherService = Depends(get_service)):
 
 ### Alpine Components
 ```html
-<div x-data="weatherApp()">
-  <div x-show="loading">Loading...</div>
-  <div x-show="error" x-text="error"></div>
-  <div x-show="weather">
-    <h2 x-text="weather?.city"></h2>
+<!-- Include Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<div x-data="weatherApp()" :class="getWeatherClass()" class="min-h-screen transition-colors duration-700">
+  <div class="max-w-md mx-auto p-6">
+    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8">
+      <div x-show="loading">Loading...</div>
+      <div x-show="error" x-text="error" class="text-red-600"></div>
+      <div x-show="weather">
+        <!-- Weather Icon -->
+        <div class="flex justify-center mb-4">
+          <i :data-lucide="getWeatherIcon()" class="w-24 h-24"></i>
+        </div>
+        
+        <h1 x-text="weather?.city" class="text-3xl font-bold text-center"></h1>
+        <p x-text="`${weather?.temperature}°C`" class="text-6xl text-center"></p>
+        <p x-text="weather?.description" class="text-center capitalize"></p>
+      </div>
+    </div>
   </div>
 </div>
+
+<script>
+  // Initialize Lucide icons after Alpine renders
+  document.addEventListener('alpine:initialized', () => {
+    lucide.createIcons();
+  });
+  
+  // Re-initialize when weather updates
+  document.addEventListener('alpine:update', () => {
+    lucide.createIcons();
+  });
+</script>
 ```
+
+**Note**: 
+- Dynamic background changes based on weather
+- Dynamic weather icons using Lucide
+- Icons update automatically with weather changes
+- Use `:data-lucide` binding for reactive icon rendering
 
 ## Anti-Patterns
 
