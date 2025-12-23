@@ -10,18 +10,26 @@ function weatherApp() {
     error: null,
     cityInput: '',
     weatherIcon: 'sun',
+    weatherClass: 'weather-sunny',
 
     /**
      * Initialize component and detect location
      */
     async init() {
       await this.detectLocation();
-      // Watch for weather changes to update icon
+      // Watch for weather changes to update icon and background class
       this.$watch('weather', (newWeather) => {
         if (newWeather) {
           const newIcon = this.getWeatherIcon();
-          console.log('Weather updated, icon:', newIcon, 'description:', newWeather.description);
+          const newClass = this.getWeatherClass();
+          console.log('Weather updated:', {
+            icon: newIcon,
+            class: newClass,
+            description: newWeather.description,
+            temperature: newWeather.temperature
+          });
           this.weatherIcon = newIcon;
+          this.weatherClass = newClass;
           // Re-initialize icons after DOM update
           this.$nextTick(() => {
             setTimeout(() => {
@@ -30,6 +38,8 @@ function weatherApp() {
               }
             }, 100);
           });
+        } else {
+          this.weatherClass = 'weather-sunny';
         }
       });
     },
@@ -65,6 +75,7 @@ function weatherApp() {
       try {
         this.weather = await WeatherAPI.getWeatherByCoordinates(lat, lon);
         this.weatherIcon = this.getWeatherIcon();
+        this.weatherClass = this.getWeatherClass();
         this.$nextTick(() => {
           if (typeof lucide !== 'undefined') {
             lucide.createIcons();
@@ -95,6 +106,7 @@ function weatherApp() {
       try {
         this.weather = await WeatherAPI.getWeatherByCity(city.trim());
         this.weatherIcon = this.getWeatherIcon();
+        this.weatherClass = this.getWeatherClass();
         this.cityInput = ''; // Clear input only on success
         this.$nextTick(() => {
           if (typeof lucide !== 'undefined') {
@@ -133,33 +145,47 @@ function weatherApp() {
      * @returns {string} Weather class name
      */
     getWeatherClass() {
-      if (!this.weather) return 'weather-sunny';
+      if (!this.weather) {
+        console.log('No weather data, returning sunny');
+        return 'weather-sunny';
+      }
       
       const temp = this.weather.temperature;
       const desc = this.weather.description.toLowerCase();
       const hour = new Date().getHours();
       
+      console.log('Calculating weather class:', { temp, desc, hour });
+      
       // Night (6pm - 6am)
-      if (hour < 6 || hour >= 18) return 'weather-night';
+      if (hour < 6 || hour >= 18) {
+        console.log('Night detected, returning weather-night');
+        return 'weather-night';
+      }
       
       // Cold/Snow (below 10°C or snow conditions)
       const coldKeywords = ['snow', 'sleet', 'ice', 'freezing', 'frost', 'blizzard'];
       if (temp < 10 || coldKeywords.some(k => desc.includes(k))) {
+        console.log('Cold/Snow detected, returning weather-cold');
         return 'weather-cold';
       }
       
-      // Rainy/Overcast
+      // Rainy/Overcast - check specific patterns first
       const rainyKeywords = [
-        'rain', 'drizzle', 'shower', 'downpour', 'precipitation',
-        'cloud', 'cloudy', 'overcast', 'grey', 'gray',
-        'mist', 'fog', 'haze', 'smoke', 'dust',
-        'thunderstorm', 'storm', 'squall'
+        'thunderstorm', 'storm', 'squall', // Storm keywords first
+        'rain', 'drizzle', 'shower', 'downpour', 'precipitation', // Rain keywords
+        'cloud', 'cloudy', 'overcast', // Cloud keywords
+        'mist', 'fog', 'haze', // Visibility keywords
+        'smoke', 'dust', // Air quality keywords
+        'grey', 'gray' // Color keywords
       ];
+      
       if (rainyKeywords.some(k => desc.includes(k))) {
+        console.log('Rainy/Overcast detected, returning weather-rainy');
         return 'weather-rainy';
       }
       
       // Default: Sunny/Clear
+      console.log('No match, returning sunny (default)');
       return 'weather-sunny';
     },
 
