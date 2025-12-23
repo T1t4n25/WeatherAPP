@@ -1,0 +1,327 @@
+# Weather Dashboard - Cursor Rules
+
+## Stack
+- **Backend**: Python 3.11+, FastAPI, Pydantic, httpx
+- **Frontend**: Alpine.js (15KB), Tailwind CSS (CDN)
+- **Deployment**: Serverless-ready (Lambda, Vercel, Railway)
+
+## Architecture
+
+### Backend Structure
+```
+src/
+├── domain/         # Business entities & exceptions
+├── application/    # Services & use cases
+├── infrastructure/ # FastAPI routes, external APIs
+└── main.py
+```
+
+### Frontend Structure
+```
+static/
+├── js/
+│   ├── components/  # Alpine.js x-data objects
+│   └── services/    # API calls
+├── css/custom.css
+└── index.html
+```
+
+## SOLID Principles
+
+- **SRP**: One class = one responsibility
+- **OCP**: Extend via interfaces, not modification
+- **LSP**: All providers implement same interface
+- **ISP**: Small, focused interfaces
+- **DIP**: Depend on abstractions via FastAPI DI
+
+## Code Standards
+
+### Python
+```python
+from typing import Protocol
+from dataclasses import dataclass
+from functools import lru_cache
+
+# Type hints mandatory
+@dataclass
+class WeatherData:
+    temperature: float
+    humidity: int
+    description: str
+
+# Protocols for interfaces
+class WeatherProvider(Protocol):
+    async def get_weather(self, lat: float, lon: float) -> WeatherData: ...
+
+# Async I/O always
+async def fetch_weather(): ...
+```
+
+**Rules**:
+- Type hints everywhere
+- Async for I/O
+- Max 20 lines per function
+- Google-style docstrings
+- Use httpx.AsyncClient
+
+### Alpine.js
+```javascript
+function weatherApp() {
+  return {
+    weather: null,
+    loading: false,
+    error: null,
+    
+    async init() {
+      await this.detectLocation();
+    },
+    
+    async fetchWeather(lat, lon) {
+      this.loading = true;
+      try {
+        const res = await fetch(`/api/v1/weather?lat=${lat}&lon=${lon}`);
+        this.weather = await res.json();
+      } catch (e) {
+        this.error = 'Failed to fetch weather';
+      }
+      this.loading = false;
+    }
+  };
+}
+```
+
+**Rules**:
+- Reactive state via x-data
+- Use async/await
+- Max 100 lines per component
+- No vanilla DOM manipulation
+
+### Tailwind CSS
+```html
+<div class="min-h-screen bg-gradient-to-br from-blue-400 to-blue-600">
+  <div class="max-w-md mx-auto p-6">
+    <div class="bg-white rounded-2xl shadow-xl p-8">
+      <!-- Content -->
+    </div>
+  </div>
+</div>
+```
+
+**Rules**: Use utility classes, mobile-first, dark mode with `dark:`
+
+## Error Handling
+
+### Backend
+```python
+class WeatherAppException(Exception): pass
+class LocationNotFoundError(WeatherAppException): pass
+class WeatherAPIError(WeatherAppException): pass
+
+@app.exception_handler(LocationNotFoundError)
+async def handler(request, exc):
+    return JSONResponse(
+        status_code=404,
+        content={"error": "location_not_found", "message": str(exc)}
+    )
+```
+
+### Frontend
+```javascript
+async fetchWeather(lat, lon) {
+  try {
+    const res = await fetch(`/api/v1/weather?lat=${lat}&lon=${lon}`);
+    if (!res.ok) {
+      const err = await res.json();
+      this.error = err.message;
+      return;
+    }
+    this.weather = await res.json();
+  } catch (e) {
+    this.error = 'Network error';
+  }
+}
+```
+
+## API Design
+
+```python
+# GET /api/v1/weather/current?lat={lat}&lon={lon}
+{
+  "data": {
+    "temperature": 22.5,
+    "humidity": 65,
+    "wind_speed": 3.2,
+    "description": "Partly cloudy",
+    "city": "London"
+  },
+  "timestamp": "2024-01-20T10:30:00Z"
+}
+
+# POST /api/v1/weather/by-city
+# Body: {"city": "London"}
+```
+
+**Rules**: Version APIs (/api/v1/), validate with Pydantic, consistent response format
+
+## Configuration (.env)
+
+```bash
+# .env (NEVER commit)
+OPENWEATHER_API_KEY=your_key
+ENVIRONMENT=development
+CACHE_TTL=300
+```
+
+```python
+from pydantic_settings import BaseSettings
+from functools import lru_cache
+
+class Settings(BaseSettings):
+    openweather_api_key: str
+    environment: str = "development"
+    cache_ttl: int = 300
+    
+    class Config:
+        env_file = ".env"
+
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
+```
+
+## Serverless Requirements
+
+✅ All secrets in environment variables
+✅ Use @lru_cache() for singletons
+✅ Stateless handlers
+✅ No file system writes
+✅ Connection pooling with cleanup
+✅ Read from env, not files
+
+```python
+# Good
+@lru_cache()
+def get_settings():
+    return Settings()  # Reads from env
+
+# Bad
+def load_config():
+    with open('config.json'): ...  # Fails in serverless
+```
+
+## Testing (Minimal)
+
+```python
+from fastapi.testclient import TestClient
+
+def test_weather_endpoint():
+    response = client.get("/api/v1/weather?lat=51.5074&lon=-0.1278")
+    assert response.status_code == 200
+    assert "data" in response.json()
+
+def test_invalid_coords():
+    response = client.get("/api/v1/weather?lat=invalid&lon=invalid")
+    assert response.status_code == 422
+```
+
+**Focus**: Critical endpoints only, Pydantic validates automatically
+
+**Frontend**: Manual testing checklist (location, errors, responsive, browsers)
+
+## Performance
+
+- Async I/O everywhere
+- Simple dict caching (5min TTL)
+- httpx connection pooling
+- Alpine.js already lightweight
+- Debounce city search (300ms)
+
+## Security
+
+✅ API keys in .env only
+✅ Pydantic validates inputs
+✅ Sanitize error messages
+✅ CORS configured
+❌ No auth/login (not needed)
+
+## Git Commits
+
+Format: `type(scope): description`
+
+Types: feat, fix, refactor, test, docs, style, chore
+
+Example: `feat(backend): add weather service with OpenWeatherMap`
+
+## Checklist
+
+### Before Commit
+- [ ] Manual browser test
+- [ ] No console errors
+- [ ] Test error scenarios
+- [ ] .env not committed
+- [ ] Meaningful commit message
+
+### Before Deploy
+- [ ] Chrome & Firefox tested
+- [ ] Mobile responsive
+- [ ] Env vars documented
+
+## Patterns
+
+### FastAPI DI
+```python
+from fastapi import Depends
+
+async def get_service() -> WeatherService:
+    settings = get_settings()
+    return WeatherService(httpx.AsyncClient(), settings)
+
+@app.get("/weather")
+async def get_weather(service: WeatherService = Depends(get_service)):
+    return await service.fetch(lat, lon)
+```
+
+### Alpine Components
+```html
+<div x-data="weatherApp()">
+  <div x-show="loading">Loading...</div>
+  <div x-show="error" x-text="error"></div>
+  <div x-show="weather">
+    <h2 x-text="weather?.city"></h2>
+  </div>
+</div>
+```
+
+## Anti-Patterns
+
+❌ Over-engineering (keep it simple)
+❌ Magic numbers (use config)
+❌ Global mutable state
+❌ Secrets in code
+❌ Stateful serverless
+❌ Complex builds
+
+## Commands
+
+```bash
+# Dev
+uvicorn src.main:app --reload --port 8000
+
+# Install
+pip install fastapi uvicorn httpx pydantic-settings python-dotenv
+
+# Setup
+cp .env.example .env
+
+# Deploy
+vercel deploy  # or railway up, gcloud run deploy
+```
+
+## Remember
+
+- Simple > Complex
+- Serverless-first (stateless, env vars)
+- Alpine.js for reactive UI
+- Pydantic validates automatically
+- .env for all secrets
+- Make it work → make it right → make it fast
