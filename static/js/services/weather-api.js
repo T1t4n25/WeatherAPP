@@ -39,8 +39,19 @@ const WeatherAPI = {
     });
     
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || `HTTP error! status: ${response.status}`);
+      const error = await response.json().catch(() => ({}));
+      
+      // Handle city not found (404)
+      if (response.status === 404) {
+        const message = error.message || error.detail || `City "${city}" not found`;
+        const cityNotFoundError = new Error(message);
+        cityNotFoundError.isCityNotFound = true;
+        cityNotFoundError.city = city;
+        throw cityNotFoundError;
+      }
+      
+      // Handle other errors
+      throw new Error(error.message || error.detail || `HTTP error! status: ${response.status}`);
     }
     
     const data = await response.json();

@@ -90,19 +90,26 @@ function weatherApp() {
 
       this.loading = true;
       this.error = null;
-      this.cityInput = '';
+      // Don't clear cityInput yet - keep it if there's an error so user can edit
       
       try {
         this.weather = await WeatherAPI.getWeatherByCity(city.trim());
         this.weatherIcon = this.getWeatherIcon();
+        this.cityInput = ''; // Clear input only on success
         this.$nextTick(() => {
           if (typeof lucide !== 'undefined') {
             lucide.createIcons();
           }
         });
       } catch (error) {
-        this.error = error.message || 'Failed to fetch weather data';
+        // Handle city not found specifically
+        if (error.isCityNotFound) {
+          this.error = `City "${error.city || city.trim()}" not found. Please check the spelling and try again.`;
+        } else {
+          this.error = error.message || 'Failed to fetch weather data';
+        }
         console.error('Weather fetch error:', error);
+        // Keep the city input so user can edit it
       } finally {
         this.loading = false;
       }

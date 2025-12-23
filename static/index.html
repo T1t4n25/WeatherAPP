@@ -39,10 +39,18 @@
                 <!-- Error State -->
                 <div x-show="error && !loading" class="mb-4 sm:mb-6">
                     <div class="bg-red-100 border border-red-400 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg mb-3 sm:mb-4">
-                        <p class="font-medium text-sm sm:text-base">Error</p>
-                        <p x-text="error" class="text-xs sm:text-sm mt-1"></p>
+                        <div class="flex items-start gap-2">
+                            <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                            </svg>
+                            <div class="flex-1">
+                                <p class="font-medium text-sm sm:text-base">Error</p>
+                                <p x-text="error" class="text-xs sm:text-sm mt-1 break-words"></p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex gap-2">
+                    <!-- Only show retry button if error is not city-specific -->
+                    <div x-show="!error.includes('not found')" class="flex gap-2">
                         <button 
                             @click="detectLocation()"
                             class="flex-1 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors touch-manipulation min-h-[44px]"
@@ -51,7 +59,8 @@
                         </button>
                     </div>
                     <p class="text-center text-xs sm:text-sm mt-3 sm:mt-4" :class="getTextColorClass() + ' opacity-75'">
-                        Or search for a city below ↓
+                        <span x-show="error.includes('not found')">Try searching with a different city name</span>
+                        <span x-show="!error.includes('not found')">Or search for a city below ↓</span>
                     </p>
                 </div>
 
@@ -109,8 +118,9 @@
                             type="text" 
                             x-model="cityInput"
                             placeholder="Search by city name..."
-                            :class="getTextColorClass() + ' bg-white bg-opacity-50 border border-gray-300 dark:border-gray-600'"
+                            :class="getTextColorClass() + ' bg-white bg-opacity-50 border ' + (error && error.includes('not found') ? 'border-red-400' : 'border-gray-300 dark:border-gray-600')"
                             class="flex-1 px-3 sm:px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base min-h-[44px]"
+                            @input="error = error && error.includes('not found') ? null : error"
                         >
                         <button 
                             type="submit"
