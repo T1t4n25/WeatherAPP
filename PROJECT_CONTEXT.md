@@ -7,11 +7,10 @@ Weather Dashboard app with FastAPI backend and Alpine.js frontend. Implements ad
 ## Key Architecture Decisions
 
 ### Backend
-- **Clean Architecture** with three layers: Domain → Application → Infrastructure
-- **SOLID Principles** throughout
-- **Protocol-based interfaces** (Python typing.Protocol)
-- **Absolute imports** from `src` (e.g., `from src.domain.entities.weather import WeatherData`)
-- **Serverless-ready**: Stateless, env vars only, `@lru_cache()` for singletons
+- **Simple structure**: Flat files (models.py, service.py, routes.py, config.py)
+- **Straightforward error handling**: Uses HTTPException and standard exceptions (ValueError, RuntimeError)
+- **Absolute imports** from `src` (e.g., `from src.models import WeatherData`)
+- **Serverless-ready**: Stateless, env vars only, `@lru_cache()` for settings
 
 ### Frontend
 - **Alpine.js** for reactivity (15KB, no build step)
@@ -21,8 +20,12 @@ Weather Dashboard app with FastAPI backend and Alpine.js frontend. Implements ad
 
 ## Important Files
 
-- `.cursorrules` - Complete development rules and standards
+- `.cursorrules` - Development rules and standards
 - `src/main.py` - FastAPI app entry, serves static files
+- `src/routes.py` - API routes
+- `src/service.py` - Weather service (API client + business logic)
+- `src/models.py` - Data models
+- `src/config.py` - Configuration
 - `static/js/components/weather-app.js` - Main Alpine.js component
 - `static/css/custom.css` - Adaptive color palette CSS
 

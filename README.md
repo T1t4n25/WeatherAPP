@@ -31,12 +31,13 @@ A modern weather dashboard application built with FastAPI backend and Alpine.js 
 
 ## Architecture
 
-### Backend Structure (Clean Architecture)
+### Backend Structure (Simplified)
 ```
 src/
-├── domain/              # Business entities & exceptions (no dependencies)
-├── application/         # Services & use cases
-├── infrastructure/      # FastAPI routes, external APIs
+├── models.py           # Data models (WeatherData, WeatherResponse)
+├── config.py           # Configuration and settings
+├── service.py          # Weather service (API client + business logic)
+├── routes.py           # API routes
 └── main.py             # Application entry point
 ```
 
@@ -178,9 +179,10 @@ Health check endpoint.
 ```
 WeatherAPP/
 ├── src/                    # Backend source code
-│   ├── domain/            # Domain layer (entities, exceptions, interfaces)
-│   ├── application/       # Application layer (services, DTOs)
-│   ├── infrastructure/    # Infrastructure layer (API, external clients)
+│   ├── models.py          # Data models (WeatherData, WeatherResponse)
+│   ├── config.py          # Configuration and settings
+│   ├── service.py         # Weather service (API client + business logic)
+│   ├── routes.py          # API routes
 │   └── main.py           # FastAPI app entry point
 ├── static/               # Frontend files
 │   ├── js/              # JavaScript components and services
@@ -214,9 +216,10 @@ The app uses an **adaptive color system** that changes the background based on w
 
 ### Code Standards
 
-- **Backend**: Follows Clean Architecture + SOLID principles
-- **Type Hints**: Mandatory for all Python functions
+- **Backend**: Simple, straightforward structure (no over-engineering)
+- **Type Hints**: Used where helpful
 - **Async I/O**: All I/O operations are async
+- **Error Handling**: Simple error handling using HTTPException and standard exceptions
 - **Frontend**: Alpine.js reactive components, Tailwind CSS utilities
 
 ### Testing
