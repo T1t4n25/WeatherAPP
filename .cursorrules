@@ -1,7 +1,7 @@
 # Weather Dashboard - Cursor Rules
 
 ## Stack
-- **Backend**: Python 3.11+, FastAPI, Pydantic, httpx
+- **Backend**: Python 3.13+, FastAPI, Pydantic, httpx
 - **Frontend**: Alpine.js (15KB), Tailwind CSS + Custom CSS (adaptive colors)
 - **Icons**: Lucide Icons (weather icons via CDN)
 - **Deployment**: Serverless-ready (Lambda, Vercel, Railway)

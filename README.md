@@ -18,7 +18,7 @@ A modern weather dashboard application built with FastAPI backend and Alpine.js 
 ## Tech Stack
 
 ### Backend
-- **Python 3.11+**
+- **Python 3.13+**
 - **FastAPI** - Modern async web framework
 - **Pydantic** - Data validation
 - **httpx** - Async HTTP client
@@ -55,10 +55,51 @@ static/
 
 ### Prerequisites
 
-- Python 3.11 or higher
+- Python 3.13 or higher (for local development)
+- Docker and Docker Compose (optional, for containerized deployment)
 - OpenWeatherMap API key ([Get one here](https://openweathermap.org/api))
 
-### Installation
+### Option 1: Using Docker (Recommended)
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd WeatherAPP
+   ```
+
+2. **Create `.env` file**
+   ```bash
+   cp env.example .env
+   ```
+   Edit `.env` and add your OpenWeatherMap API key:
+   ```bash
+   OPENWEATHER_API_KEY=your_api_key_here
+   ENVIRONMENT=production
+   CACHE_TTL=300
+   ```
+
+3. **Build and run with Docker**
+
+   **Option A: Using Docker directly**
+   ```bash
+   # Build the Docker image
+   docker build -t weather-dashboard .
+   
+   # Run the container
+   docker run -d -p 8000:8000 --env-file .env --name weather-app weather-dashboard
+   ```
+
+   **Option B: Using Docker Compose (Recommended)**
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Open in browser**
+   ```
+   http://localhost:8000
+   ```
+
+### Option 2: Local Development
 
 1. **Clone the repository**
    ```bash
@@ -148,6 +189,9 @@ WeatherAPP/
 ├── .cursorrules         # Development rules and standards
 ├── requirements.txt     # Python dependencies
 ├── env.example          # Environment variables template
+├── Dockerfile           # Docker container configuration
+├── docker-compose.yml   # Docker Compose configuration
+├── .dockerignore        # Docker ignore file
 └── README.md           # This file
 ```
 
